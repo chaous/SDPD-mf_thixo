@@ -18,7 +18,59 @@ c) Transient viscosity model: This update includes a thixotropic (viscosity tran
 
 This SDPD extension must be compiled in the 21-Nov-2023 release of the open source LAMMPS (Large-scale Atomic/Molecular Massively Parallel Simulator).
 
-# Installation and Build flags
+# Quick start with Docker
+
+If you prefer not to compile LAMMPS by hand, the included `Dockerfile` builds a self-contained image with the patched LAMMPS binary and all numerical examples. It works on any machine with Docker installed (Linux, macOS, Windows via Docker Desktop or WSL2).
+
+## 1. Build the image
+
+```
+docker build -t sdpd-mf .
+```
+
+This downloads LAMMPS 21Nov2023 from the official mirror, applies all patches in this repository (including the `atom_vec_sph.cpp` fix described in [`atom_vec_sph.patch`](atom_vec_sph.patch)), and compiles `lmp_mpi` with MPI support. Build time is typically 5–15 minutes.
+
+To use more cores during compilation:
+
+```
+docker build --build-arg NPROC=8 -t sdpd-mf .
+```
+
+## 2. Run a numerical example
+
+Output (dump files, log) is written to a host directory you mount into the container.
+
+```
+mkdir -p results
+docker run --rm -v "$(pwd)/results:/work" sdpd-mf run-example 01_Young-laplace
+```
+
+When the run finishes, you'll find `results/01_Young-laplace/dumps/*.lammpstrj` and `results/01_Young-laplace/log.lammps` on the host. Drag the `dumps/` folder into [OVITO](https://www.ovito.org/) or ParaView to visualise the trajectory.
+
+## 3. List available examples
+
+```
+docker run --rm sdpd-mf
+```
+
+(The default command prints the list of cases bundled in `/opt/sdpd/examples`.)
+
+## 4. Drop into a shell inside the container
+
+```
+docker run --rm -it -v "$(pwd)/results:/work" sdpd-mf bash
+```
+
+Useful for inspecting input files, running custom invocations of `lmp_mpi`, or debugging.
+
+## 5. Notes
+
+- The image runs as a non-root `sdpd` user (UID 1000); make sure the host directory you mount is writable by UID 1000, or run `docker run --user $(id -u):$(id -g) ...`.
+- Multi-rank MPI runs (`mpirun -np N lmp_mpi …`) are not yet recommended — the `fields_comm` / `fields_border` lists for the new per-atom fields (`gammadot`, `gradv`, `fintx`, `finty`, `stmic`, `stfluid`) need confirmation from the authors before parallel correctness can be guaranteed. Stick to single-rank for now.
+
+---
+
+# Installation and Build flags (manual)
 
 The installation process and build flags are detailed step by step below.
 

@@ -1,0 +1,25 @@
+# Keep the build context small and reproducible.
+# Patched source files in the repo root, the docker/ subdir, and "Numerical examples/"
+# are needed by the Dockerfile; everything below is excluded.
+
+.git/
+.gitignore
+
+# Local LAMMPS build (~1 GB) — the Dockerfile downloads its own copy
+lammps-build/
+
+# Run output (can be large)
+**/dumps/
+**/log.lammps
+**/log.cite
+*.lammpstrj*
+
+# Bundled binary tarball — the Dockerfile uses the loose patched files
+# in the repo root, not this archive
+lammps-21Nov23.tar.gz
+
+# Auxiliary
+*.patch
+image.png
+**/image.png
+README.md.bak
